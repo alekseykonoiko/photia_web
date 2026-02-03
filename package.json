@@ -1,0 +1,36 @@
+{
+  "name": "photia-web-prototype",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/patch-onnxruntime.cjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@tensorflow-models/face-detection": "^1.0.3",
+    "@tensorflow/tfjs-backend-webgl": "^4.20.0",
+    "@tensorflow/tfjs-core": "^4.20.0",
+    "exifr": "^7.1.3",
+    "heic2any": "^0.0.4",
+    "libheif-js": "^1.19.8",
+    "onnxruntime-web": "^1.18.0",
+    "pica": "^9.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-dropzone": "^14.2.3",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}

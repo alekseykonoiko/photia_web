@@ -1,0 +1,163 @@
+:root {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color: #1b1b1b;
+  background: #f6f4f1;
+}
+
+body {
+  margin: 0;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e0da;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+
+.card input,
+.card select {
+  border: 1px solid #d8d2ca;
+  border-radius: 6px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.spread-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+  gap: 20px;
+  margin-top: 12px;
+}
+
+.spread {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  background: #f0ede9;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid #e5e0da;
+  transition: transform 180ms ease;
+}
+
+.spread.turn-next {
+  transform: rotateY(-6deg);
+}
+
+.spread.turn-prev {
+  transform: rotateY(6deg);
+}
+
+.spread-view {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.album-page {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e5e0da;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.frame-outer {
+  position: absolute;
+  overflow: hidden;
+  transform-origin: center center;
+}
+
+.frame-inner {
+  position: absolute;
+  overflow: hidden;
+}
+
+.dropzone {
+  border: 2px dashed #c4bfb8;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background: #faf8f5;
+}
+
+.button {
+  background: #1f1f1f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preview-wrap {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  border: 1px solid #e5e0da;
+  overflow: hidden;
+  background: #fff;
+}
+
+.preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.preview-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.face-box {
+  position: absolute;
+  border: 1px solid #ff4d4f;
+  pointer-events: none;
+}
+
+.muted {
+  color: #6b6b6b;
+  font-size: 0.9rem;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+}

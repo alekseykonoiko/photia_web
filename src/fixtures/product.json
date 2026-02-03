@@ -1,0 +1,33 @@
+{
+  "id": 0,
+  "name": "REPLACE_ME",
+  "image": "",
+  "params": [],
+  "wrappingCost": 0,
+  "interest": 0,
+  "photos": [],
+  "template": {
+    "width": 0,
+    "height": 0,
+    "coverWidth": 0,
+    "coverHeight": 0,
+    "pageTemplates": [],
+    "coverTemplates": [],
+    "coverTypes": [],
+    "sheetTypes": [],
+    "minSpreadsCount": 0,
+    "maxSpreadsCount": 0,
+    "formatW": 0,
+    "formatH": 0,
+    "sheetType": { "sheetTypeId": 0, "name": "", "imageUrl": "" },
+    "coverType": { "coverTypeId": 0, "name": "", "imageUrl": "", "coverColors": [] },
+    "photosPerPage": 3,
+    "coverTemplate": { "data": [], "text": [], "coverCategoryId": 0, "coverType": 0 },
+    "premium": false
+  },
+  "notes": "",
+  "cost": 0,
+  "currency": "",
+  "productTypeId": 0,
+  "period": 0
+}
