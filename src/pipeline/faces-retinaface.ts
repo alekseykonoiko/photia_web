@@ -1,5 +1,14 @@
-import * as ort from 'onnxruntime-web/wasm';
 import type { Face } from '../core/types/album/Face';
+
+// Lazy-loaded ONNX runtime - only loads when first photo is processed
+let ortModule: typeof import('onnxruntime-web/wasm') | null = null;
+
+async function getOrt() {
+  if (!ortModule) {
+    ortModule = await import('onnxruntime-web/wasm');
+  }
+  return ortModule;
+}
 
 type DetectOptions = {
   modelUrl?: string;
@@ -57,9 +66,25 @@ const CFG = {
   clip: false
 };
 
-let sessionPromise: Promise<ort.InferenceSession> | null = null;
+let sessionPromise: Promise<any> | null = null;
 let assetsChecked = false;
 const priorCache = new Map<string, Float32Array>();
+let preloadStarted = false;
+
+/**
+ * Preload ONNX runtime and face detection model in background.
+ * Call this after page loads to warm up before user selects photos.
+ */
+export function preloadFaceDetection() {
+  if (preloadStarted) return;
+  preloadStarted = true;
+
+  // Start loading in background without blocking
+  getSession(DEFAULTS.modelUrl).catch((err) => {
+    console.warn('[retinaface] Preload failed:', err);
+    preloadStarted = false; // Allow retry
+  });
+}
 
 async function ensureOrtAssets(basePath: string) {
   if (assetsChecked) return;
@@ -67,7 +92,8 @@ async function ensureOrtAssets(basePath: string) {
   const mustHave = ['ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm'];
   for (const name of mustHave) {
     const url = `${prefix}${name}`;
-    const res = await fetch(url, { cache: 'no-store' });
+    // Use HEAD request to check existence without downloading the full file
+    const res = await fetch(url, { method: 'HEAD' });
     if (!res.ok) {
       throw new Error(
         `ONNX Runtime asset missing: ${url}. Copy all 'ort-wasm-*.mjs' and 'ort-wasm-*.wasm' files to ${prefix}`
@@ -79,6 +105,7 @@ async function ensureOrtAssets(basePath: string) {
 
 async function getSession(modelUrl: string) {
   if (!sessionPromise) {
+    const ort = await getOrt();
     const wasmPath = (import.meta as any).env?.VITE_ORT_WASM_PATH ?? '/onnx/';
     const baseUrl =
       typeof window !== 'undefined' ? new URL(wasmPath, window.location.href).href : wasmPath;
@@ -140,7 +167,7 @@ type Mat = {
   layout: 'NC' | 'CN';
 };
 
-function toMat(tensor: ort.Tensor): Mat | null {
+function toMat(tensor: any): Mat | null {
   const data = tensor.data as Float32Array;
   const dims = tensor.dims;
   if (dims.length === 3) {
@@ -177,7 +204,8 @@ function preprocess(
   bitmap: ImageBitmap,
   inputHeight: number,
   inputWidth: number,
-  mode: 'stretch' | 'letterbox'
+  mode: 'stretch' | 'letterbox',
+  ort: typeof import('onnxruntime-web/wasm')
 ) {
   const srcCanvas = document.createElement('canvas');
   srcCanvas.width = bitmap.width;
@@ -290,6 +318,7 @@ export async function detectFacesRetinafaceOnnx(
   const debug = Boolean(config.debug);
 
   const t0 = performance.now();
+  const ort = await getOrt();
   const session = await getSession(config.modelUrl!);
   const inputName = session.inputNames[0];
   let inputHeight = config.inputHeight!;
@@ -316,7 +345,8 @@ export async function detectFacesRetinafaceOnnx(
     bitmap,
     inputHeight,
     inputWidth,
-    config.preprocess!
+    config.preprocess!,
+    ort
   );
   const t2 = performance.now();
 

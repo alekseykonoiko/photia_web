@@ -7,8 +7,9 @@ import type { Photo } from './core/types/album/Photo';
 import type { Frame } from './core/types/album/Frame';
 import { Orientation } from './core/Constants';
 import { decodeFileToBitmap } from './pipeline/decode';
-import { detectFacesRetinafaceOnnx } from './pipeline/faces-retinaface';
+import { detectFacesRetinafaceOnnx, preloadFaceDetection } from './pipeline/faces-retinaface';
 import { buildAlbum } from './pipeline/buildAlbum';
+import LoginPage from './components/LoginPage';
 
 const emptyFrame = (): Frame => ({
   width: 0,
@@ -133,7 +134,7 @@ function FacePreview({ item, showFaces }: { item: PhotoItem; showFaces: boolean 
   );
 }
 
-export default function App() {
+function MainApp() {
   const [items, setItems] = useState<PhotoItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [albumJson, setAlbumJson] = useState<string>('');
@@ -147,10 +148,16 @@ export default function App() {
   const [logTiming, setLogTiming] = useState(true);
   const [pageLimit, setPageLimit] = useState(0);
   const [preview, setPreview] = useState<{ pages: any[]; width: number; height: number } | null>(null);
+  const [currentSpread, setCurrentSpread] = useState(0);
   const product = useMemo(() => {
     if (selectedProduct) return selectedProduct;
     return isValidProduct(productFixture) ? productFixture : null;
   }, [selectedProduct]);
+
+  // Preload face detection engine in background after login
+  useEffect(() => {
+    preloadFaceDetection();
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -267,6 +274,7 @@ export default function App() {
       const result = await buildAlbum(product, items.map((item) => item.photo), 320);
       setAlbumJson(JSON.stringify(result.album, null, 2));
       setPreview({ pages: result.album.pages ?? [], width: result.previewWidth, height: result.previewHeight });
+      setCurrentSpread(0); // Reset to first spread when regenerating
     } finally {
       setIsProcessing(false);
     }
@@ -355,6 +363,29 @@ export default function App() {
     }
     return pages;
   }, [preview, pageLimit]);
+
+  // Group pages into spreads (2 pages per spread)
+  const spreads = useMemo(() => {
+    const result: Array<{ left: any | null; right: any | null }> = [];
+    for (let i = 0; i < pagesToRender.length; i += 2) {
+      result.push({
+        left: pagesToRender[i] || null,
+        right: pagesToRender[i + 1] || null
+      });
+    }
+    return result;
+  }, [pagesToRender]);
+
+  const totalSpreads = spreads.length;
+  const currentSpreadData = spreads[currentSpread] || null;
+
+  const goToPrevSpread = () => {
+    setCurrentSpread((prev) => Math.max(0, prev - 1));
+  };
+
+  const goToNextSpread = () => {
+    setCurrentSpread((prev) => Math.min(totalSpreads - 1, prev + 1));
+  };
 
 
   const renderPage = useCallback(
@@ -514,22 +545,58 @@ export default function App() {
       {preview && (
         <div style={{ marginTop: 16 }} className="card">
           <h3>Album Preview</h3>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
             <label className="muted" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               Max pages
               <input
                 type="number"
                 min={0}
                 value={pageLimit}
-                onChange={(e) => setPageLimit(Number(e.target.value || 0))}
+                onChange={(e) => {
+                  setPageLimit(Number(e.target.value || 0));
+                  setCurrentSpread(0);
+                }}
                 style={{ width: 80, padding: '4px 6px' }}
               />
             </label>
             <span className="muted">0 = all pages</span>
+            <span className="muted">| Total pages: {pagesToRender.length}</span>
           </div>
-          <div className="album-grid">
-            {pagesToRender.map((page, idx) => renderPage(page, `page-${idx}`))}
-          </div>
+
+          {totalSpreads > 0 && currentSpreadData && (
+            <div className="spread-view">
+              <div className="pagination-bar">
+                <button
+                  className="button"
+                  onClick={goToPrevSpread}
+                  disabled={currentSpread === 0}
+                  style={{ padding: '8px 16px' }}
+                >
+                  ← Prev
+                </button>
+                <span className="muted">
+                  Spread {currentSpread + 1} of {totalSpreads} (Pages {currentSpread * 2 + 1}–{Math.min(currentSpread * 2 + 2, pagesToRender.length)})
+                </span>
+                <button
+                  className="button"
+                  onClick={goToNextSpread}
+                  disabled={currentSpread >= totalSpreads - 1}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Next →
+                </button>
+              </div>
+
+              <div className="spread">
+                {currentSpreadData.left && renderPage(currentSpreadData.left, `spread-${currentSpread}-left`)}
+                {currentSpreadData.right && renderPage(currentSpreadData.right, `spread-${currentSpread}-right`)}
+              </div>
+            </div>
+          )}
+
+          {totalSpreads === 0 && (
+            <p className="muted">No pages to display.</p>
+          )}
         </div>
       )}
 
@@ -550,4 +617,20 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('photia_auth') === 'true';
+  });
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  return <MainApp />;
 }
